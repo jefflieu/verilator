@@ -20,15 +20,18 @@ class AxiLiteDriver : Driver<AxiLiteTransaction> {
     ST_RDATA, 
     ST_RDATA_CHK,
     ST_RDATA_MOD_WRITE,
+    ST_RDATA_POLL,
   };
 public:
-  AxiLiteDriver() {};
+  AxiLiteDriver(const char* c = nullptr) {this->name = (c == nullptr)?"AxiLiteDriver":c;};
   ~AxiLiteDriver() {};
 
   void pushTransaction(AxiLiteTransaction & t) { transQueue.push_back(t);}
   void eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<Type_A, Type_D> & m2s, const AxiLiteS2M<Type_A, Type_D>& s2m);
+  int getTransactionCount() {return transQueue.size();};
 
 private:
+  const char* name;
   AxiLiteM2S<Type_A, Type_D> next_output;
   bool last_clk = 0;
   T_State state = ST_IDLE;
@@ -47,7 +50,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
       state = T_State::ST_IDLE;
     else {
 
-      auto next_transaction = transQueue.front();
+      auto next_transaction = transQueue.front();      
       switch(state) 
       {
         case ST_IDLE :  next_output.awvalid = 0;
@@ -61,6 +64,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                         next_output.bready  = 1;                                                                              
                         
                         if (!transQueue.empty()) {
+                          printf("%s : Time %08ld: %s \n", this->name, time, next_transaction.getInfo().c_str());
                           state = ST_WAIT;
                           trans_cnt ++;
                         }
@@ -89,20 +93,13 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                             next_output.awvalid = 0;
                             state = ST_WDATA;
                           }
-                        }
-                        else if (state == ST_RADDR) {
+                        } else if (state == ST_RADDR) {
                           if (m2s.arvalid && s2m.arready) {
                             next_output.arvalid = 0;
-                            state = ST_RDATA; 
-                            switch(next_transaction.type) {
-                            case AxiLiteTransaction::READ            : state = ST_RDATA; break;
-                            case AxiLiteTransaction::READ_CHECK      : state = ST_RDATA_CHK; break;
-                            case AxiLiteTransaction::READ_MOD_WRITE  : state = ST_RDATA_MOD_WRITE; break;
-                            default     : break;
+                            state = ST_RDATA;                             
                             }
-                          }
                         }
-                          
+
                         break;
         case ST_WDATA:  next_output.awvalid = 0;
                         next_output.awaddr  = 0;
@@ -121,6 +118,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                         break;
         case ST_RDATA_MOD_WRITE:  
         case ST_RDATA_CHK:  
+        case ST_RDATA_POLL:  
         case ST_RDATA:  next_output.awvalid = 0;
                         next_output.awaddr  = 0;
                         next_output.wvalid  = 0;
@@ -130,15 +128,32 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                         next_output.araddr  = 0;
                         next_output.rready  = 1;
                         next_output.bready  = 1;
+
+                        
                         if (m2s.rready && s2m.rvalid) {
                           next_output.rready = 0;
                           read_data = s2m.rdata;
-                          transQueue.pop_front();
-                          if (state == ST_RDATA_CHK)
-                          {
-                            printf("Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
+                          
+                          switch(next_transaction.type) {
+                          case AxiLiteTransaction::READ            :  state = ST_IDLE;
+                                                                      transQueue.pop_front();
+                                                                      break;
+                          case AxiLiteTransaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
+                                                                      state = ST_IDLE;
+                                                                      transQueue.pop_front();
+                                                                      break;
+                          case AxiLiteTransaction::READ_MOD_WRITE  :  break;
+                          case AxiLiteTransaction::READ_POLL       :  if ((read_data & next_transaction.mask) == next_transaction.data) {
+                                                                        state = ST_IDLE;
+                                                                        transQueue.pop_front();
+                                                                      } else {
+                                                                        state = ST_RADDR;
+                                                                      }
+                                                                      break;
+                          
+                          default : break;
                           }
-                          state = ST_IDLE;
+                          
                         }
                         break;          
         default : break;
@@ -146,10 +161,11 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
       if (m2s.bready && s2m.bvalid) {
         switch(s2m.bresp) 
         {
-          case 0 : printf("Write transaction OK\r\n"); break;
-          default: printf("Write transaction failed\r\n"); break;
+          case 0 : printf("%s : Write transaction OK\r\n", name); break;
+          default: printf("%s : Write transaction failed\r\n", name); break;
         }
       }
+
       m2s = next_output;
     }
   }
