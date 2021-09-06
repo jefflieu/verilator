@@ -44,12 +44,12 @@ public:
 private:
   const char* typeToString(T_Type t) {
     switch(t) {
-    case WRITE : return "WRITE";
-    case READ : return "READ";
-    case READ_CHECK : return "READ_CHECK";
-    case READ_POLL : return "READ_POLL";
+    case WRITE          : return "WRITE";
+    case READ           : return "READ";
+    case READ_CHECK     : return "READ_CHECK";
+    case READ_POLL      : return "READ_POLL";
     case READ_MOD_WRITE : return "WRITE";
-    default : return "UNKNOWN";
+    default             : return "UNKNOWN";
     }
   }
 

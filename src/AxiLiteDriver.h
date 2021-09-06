@@ -1,4 +1,6 @@
-
+/* 
+  Jeff Lieu <lieumychuong@gmail.com>  
+*/
 
 #pragma once
 
@@ -23,6 +25,50 @@ class AxiLiteDriver : Driver<AxiLiteTransaction> {
     ST_RDATA_POLL,
   };
 public:
+
+  /* How to use the class:
+    
+    Create Driver and bus:
+      AxiLite32* axiliteDriver = new AxiLite32();
+      AxiLite32M2S axi_driver_to_dut;
+      AxiLite32S2M axi_dut_to_driver;
+      
+    Add transaction to Driver
+      AxiLiteTransaction* t;    
+      t = new AxiLiteTransaction(AxiLiteTransaction::WRITE, 0x10, a);
+      axiliteDriver->pushTransaction(*t);
+
+    Connect driver to dut and call eval in the simulation loop of Verilator
+
+      if (!top->ap_clk) {
+
+        //Pass signals going into blocks on negative edge
+        top->s_axi_BUS_A_AWVALID = axi_driver_to_dut.awvalid;
+        top->s_axi_BUS_A_AWADDR  = axi_driver_to_dut.awaddr;
+        top->s_axi_BUS_A_WVALID  = axi_driver_to_dut.wvalid;
+        top->s_axi_BUS_A_WDATA   = axi_driver_to_dut.wdata;
+        top->s_axi_BUS_A_WSTRB   = axi_driver_to_dut.wstrb;
+        top->s_axi_BUS_A_ARVALID = axi_driver_to_dut.arvalid;
+        top->s_axi_BUS_A_ARADDR  = axi_driver_to_dut.araddr;
+        top->s_axi_BUS_A_RREADY  = axi_driver_to_dut.rready;
+        top->s_axi_BUS_A_BREADY  = axi_driver_to_dut.bready;
+
+
+        axi_dut_to_driver.awready = top->s_axi_BUS_A_AWREADY;
+        axi_dut_to_driver.arready = top->s_axi_BUS_A_ARREADY;
+        axi_dut_to_driver.wready  = top->s_axi_BUS_A_WREADY;
+        axi_dut_to_driver.rvalid  = top->s_axi_BUS_A_RVALID ;
+        axi_dut_to_driver.rdata   = top->s_axi_BUS_A_RDATA  ;
+        axi_dut_to_driver.bvalid  = top->s_axi_BUS_A_BVALID;
+        axi_dut_to_driver.bresp   = top->s_axi_BUS_A_BRESP;
+        axi_dut_to_driver.rresp   = top->s_axi_BUS_A_RRESP;          
+      }
+
+      top->eval();
+      axiliteDriver->eval(main_time, top->ap_clk, (main_time < 100), axi_driver_to_dut, axi_dut_to_driver);
+
+  */
+
   AxiLiteDriver(const char* c = nullptr) {this->name = (c == nullptr)?"AxiLiteDriver":c;};
   ~AxiLiteDriver() {};
 
