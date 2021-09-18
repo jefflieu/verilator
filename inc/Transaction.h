@@ -2,6 +2,7 @@
 
 #include <string>
 
+namespace vtb {
 
 class BusTransaction {
 
@@ -54,3 +55,5 @@ private:
   }
 
 };
+
+}

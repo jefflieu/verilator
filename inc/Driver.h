@@ -5,6 +5,7 @@
 #include <list>
 #include <iterator>
 
+namespace vtb {
 
 template <typename TransactionT>
 class Driver {
@@ -22,4 +23,4 @@ private:
 
 };
 
-
+}

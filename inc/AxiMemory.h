@@ -12,6 +12,7 @@
 #include "Transaction.h"
 #include "messages.h"
 
+namespace vtb {
 
 template <typename Type_A>
 struct MemorySegment {
@@ -302,3 +303,4 @@ void AxiMemory<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, const Ax
   last_clk = clk;
 };
 
+}

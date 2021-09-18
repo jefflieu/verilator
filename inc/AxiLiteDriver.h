@@ -10,6 +10,7 @@
 #include "Driver.h"
 #include "Transaction.h"
 
+namespace vtb {
 
 template <typename Type_A, typename Type_D>
 class AxiLiteDriver : Driver<AxiLiteTransaction> {
@@ -218,3 +219,4 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
   last_clk = clk;
 };
 
+}

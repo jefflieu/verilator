@@ -3,6 +3,9 @@
 
 #pragma once
 
+
+namespace vtb {
+
 enum T_AxSize{
     _1_BYTE = 0,
     _2_BYTE = 1,
@@ -72,7 +75,7 @@ template <typename Type_A, typename Type_D> struct AxiBusM2S {
   bool wvalid;
   Type_D wdata;
   bool wlast;
-  uint32_t wstrb;  
+  uint64_t wstrb;  
   uint32_t awid;
   uint32_t awlen;
   uint32_t awsize;
@@ -128,3 +131,5 @@ template <typename Type_A, typename Type_D> struct AxiBusS2M {
   AxiBusS2M() {memset(this, 0, sizeof(AxiBusS2M<Type_A, Type_D>));}
 };
 
+
+}
