@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include "messages.h"
 
 namespace vtb {
 
@@ -30,6 +31,31 @@ enum T_AxResp {
   SLVERR = 2,
   DECERR = 3
 };
+
+template <typename Type_D> 
+void inline putBytesToBus(Type_D* bus, uint8_t byte, uint32_t i) {
+  if (sizeof(Type_D) <= 8)
+  {
+    Type_D tmp = *bus;
+    tmp &= ~(0xffull << (i*8));
+    tmp |= (unsigned long long) (byte &  0xff) << (i*8);
+    *bus = tmp;
+  } else {
+    ASSERT_CODE(0, "Not supported bus type\n");
+  }
+}
+
+template <typename Type_D>
+void inline setBit(Type_D* a, uint8_t i, uint32_t bit) {
+  if (sizeof(Type_D) <= 8)
+  {
+    Type_D tmp = (*a) & (~(1 << i));
+    tmp |= ((bit) & 0x1) << i;    
+    *a = tmp;
+  } else {
+    ASSERT_CODE(0, "Not supported bus type\n");
+  } 
+}
 
 
 template <typename Type_A, typename Type_D> struct AxiLiteM2S {
@@ -131,5 +157,23 @@ template <typename Type_A, typename Type_D> struct AxiBusS2M {
   AxiBusS2M() {memset(this, 0, sizeof(AxiBusS2M<Type_A, Type_D>));}
 };
 
+template <typename Type_D> struct AxiStreamSource {
+
+  bool tvalid;  
+  Type_D tdata;
+  uint64_t tkeep;
+  uint64_t tstrb;
+  uint32_t tlast;
+  uint32_t tuser;
+  uint32_t tid;
+  uint32_t tdest;
+
+  AxiStreamSource() {memset(this, 0, sizeof(AxiStreamSource<Type_D>));}
+};
+
+struct AxiStreamSink {
+  bool tready;
+  AxiStreamSink() {this->tready = 0;}
+};
 
 }

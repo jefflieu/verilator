@@ -12,8 +12,13 @@
 
 namespace vtb {
 
+
 template <typename Type_A, typename Type_D>
-class AxiLiteDriver : Driver<AxiLiteTransaction> {
+class AxiLiteDriver : public Driver< AxiLiteTransaction<Type_A, Type_D> > {
+
+  using Transaction = AxiLiteTransaction<Type_A, Type_D>;
+  using Driver<Transaction> :: transQueue;
+
   enum T_State {
     ST_IDLE,
     ST_WAIT,
@@ -25,6 +30,7 @@ class AxiLiteDriver : Driver<AxiLiteTransaction> {
     ST_RDATA_MOD_WRITE,
     ST_RDATA_POLL,
   };
+
 public:
 
   /* How to use the class:
@@ -73,7 +79,7 @@ public:
   AxiLiteDriver(const char* c = nullptr) {this->name = (c == nullptr)?"AxiLiteDriver":c;};
   ~AxiLiteDriver() {};
 
-  void pushTransaction(AxiLiteTransaction & t) { transQueue.push_back(t);}
+  void pushTransaction(Transaction & t) { transQueue.push_back(t);}
   void eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<Type_A, Type_D> & m2s, const AxiLiteS2M<Type_A, Type_D>& s2m);
   int getTransactionCount() {return transQueue.size();};
 
@@ -83,7 +89,7 @@ private:
   bool last_clk = 0;
   T_State state = ST_IDLE;
   int trans_cnt = 0;
-  AxiLiteTransaction* current_transaction;
+  Transaction* current_transaction;
   uint64_t read_data;
 
 };
@@ -119,7 +125,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                         break;
 
         case ST_WAIT :  if (time >= next_transaction.timestamp)
-                          if (next_transaction.type == AxiLiteTransaction::WRITE)                              
+                          if (next_transaction.type == Transaction::WRITE)                              
                             state = ST_WADDR;
                           else 
                             state = ST_RADDR;
@@ -182,21 +188,21 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                           read_data = s2m.rdata;
                           
                           switch(next_transaction.type) {
-                          case AxiLiteTransaction::READ            :  state = ST_IDLE;
-                                                                      transQueue.pop_front();
-                                                                      break;
-                          case AxiLiteTransaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
-                                                                      state = ST_IDLE;
-                                                                      transQueue.pop_front();
-                                                                      break;
-                          case AxiLiteTransaction::READ_MOD_WRITE  :  break;
-                          case AxiLiteTransaction::READ_POLL       :  if ((read_data & next_transaction.mask) == next_transaction.data) {
-                                                                        state = ST_IDLE;
-                                                                        transQueue.pop_front();
-                                                                      } else {
-                                                                        state = ST_RADDR;
-                                                                      }
-                                                                      break;
+                          case Transaction::READ            :  state = ST_IDLE;
+                                                               transQueue.pop_front();
+                                                               break;
+                          case Transaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
+                                                               state = ST_IDLE;
+                                                               transQueue.pop_front();
+                                                               break;
+                          case Transaction::READ_MOD_WRITE  :  break;
+                          case Transaction::READ_POLL       :  if ((read_data & next_transaction.mask) == next_transaction.data) {
+                                                               state = ST_IDLE;
+                                                               transQueue.pop_front();
+                                                               } else {
+                                                               state = ST_RADDR;
+                                                               }
+                                                               break;
                           
                           default : break;
                           }
