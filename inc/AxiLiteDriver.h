@@ -6,9 +6,9 @@
 
 #include <list>
 #include <iterator>
-#include "AxiBus.h"
-#include "Driver.h"
-#include "Transaction.h"
+#include "VtbAxiBus.h"
+#include "VtbDriver.h"
+#include "VtbTransaction.h"
 
 namespace vtb {
 
@@ -84,7 +84,7 @@ public:
   int getTransactionCount() {return transQueue.size();};
 
 private:
-  const char* name;
+
   AxiLiteM2S<Type_A, Type_D> next_output;
   bool last_clk = 0;
   T_State state = ST_IDLE;
@@ -191,7 +191,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                           case Transaction::READ            :  state = ST_IDLE;
                                                                transQueue.pop_front();
                                                                break;
-                          case Transaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
+                          case Transaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", this->name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
                                                                state = ST_IDLE;
                                                                transQueue.pop_front();
                                                                break;
@@ -214,8 +214,8 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
       if (m2s.bready && s2m.bvalid) {
         switch(s2m.bresp) 
         {
-          case 0 : printf("%s : Write transaction OK\r\n", name); break;
-          default: printf("%s : Write transaction failed\r\n", name); break;
+          case 0 : printf("%s : Write transaction OK\r\n", this->name); break;
+          default: printf("%s : Write transaction failed\r\n", this->name); break;
         }
       }
 

@@ -5,20 +5,20 @@
 #include <list>
 #include <iterator>
 
+#include "VtbObject.h"
+
 namespace vtb {
 
 template <typename TransactionT>
-class Driver {
+class Driver : public VtbObject {
 
-public: 
-  Driver() {};
+protected: 
+  Driver() {};  
   ~Driver() {};
 
   std::list<TransactionT> transQueue;
 
 private:
-
-
 
 
 };

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "messages.h"
+#include "vtb_messages.h"
 
 namespace vtb {
 

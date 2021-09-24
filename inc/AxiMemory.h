@@ -7,10 +7,10 @@
 
 #include <list>
 #include <iterator>
-#include "AxiBus.h"
-#include "Driver.h"
-#include "Transaction.h"
-#include "messages.h"
+#include "VtbAxiBus.h"
+#include "VtbDriver.h"
+#include "VtbTransaction.h"
+#include "vtb_messages.h"
 
 namespace vtb {
 
@@ -26,7 +26,7 @@ struct MemorySegment {
 
 
 template <typename Type_A, typename Type_D>
-class AxiMemory {
+class AxiMemory : public VtbObject {
   
   enum T_State {
     ST_IDLE,
@@ -105,7 +105,7 @@ public:
   uint32_t  getMemSize(uint32_t segment) {return mem_size;}
 
 private:
-  const char* name;
+  
   uint8_t* mem_array;
   uint32_t mem_size;
   

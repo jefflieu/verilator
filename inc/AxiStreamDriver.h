@@ -6,9 +6,9 @@
 
 #include <list>
 #include <iterator>
-#include "AxiBus.h"
-#include "Driver.h"
-#include "Transaction.h"
+#include "VtbAxiBus.h"
+#include "VtbDriver.h"
+#include "VtbTransaction.h"
 
 namespace vtb {
 
@@ -28,14 +28,14 @@ class AxiStreamDriver : public Driver< AxiStreamTransaction > {
   };
 
 public:
-  AxiStreamDriver(const char* c = nullptr) {this->name = (c == nullptr)?"AXI Stream driver":c;};
+  AxiStreamDriver(const char* c = nullptr) {this->name = (c == nullptr)?"AXI Stream driver":c;}
   ~AxiStreamDriver();
 
   void pushTransaction(Transaction & t) { transQueue.push_back(t);}
   void eval(uint64_t time, bool clk, bool rst,  AxiSource &src, const AxiSink &sink);
 
 private: 
-  const char* name;
+
   AxiSource next_output;
   T_State state = ST_IDLE;
   uint64_t trans_cnt  = 0;
@@ -96,11 +96,13 @@ void AxiStreamDriver<Type_D>::eval(uint64_t time, bool clk, bool rst,  AxiSource
         case ST_FETCH   : 
                           next_output.tdata = 0;                          
                           next_output.tkeep = 0;
+                          next_output.tstrb  = 0;
                           for (uint32_t i  = 0; i < sizeof(Type_D); i++) {             
                               uint8_t byte;                 
                               setBit<uint64_t>(&next_output.tkeep, i, (next_transaction.getByte(rd_addr+i, &byte)));
                               putBytesToBus<Type_D>( &next_output.tdata, byte, i);
                             }
+                          next_output.tstrb  = next_output.tkeep;
                           next_output.tvalid = 1;                          
                           next_output.tlast  = (total_beat == 1);
                           first_beat = false;
