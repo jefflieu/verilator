@@ -4,6 +4,7 @@
 #pragma once
 
 #include "vtb_messages.h"
+#include "VtbObject.h"
 
 namespace vtb {
 
@@ -32,11 +33,11 @@ enum T_AxResp {
   DECERR = 3
 };
 
-template <typename Type_D> 
-void inline putBytesToBus(Type_D* bus, uint8_t byte, uint32_t i) {
-  if (sizeof(Type_D) <= 8)
+template <typename T_VtbBus> 
+void inline setByte(T_VtbBus* bus, uint8_t byte, uint32_t i) {
+  if (sizeof(T_VtbBus) <= 8)
   {
-    Type_D tmp = *bus;
+    T_VtbBus tmp = *bus;
     tmp &= ~(0xffull << (i*8));
     tmp |= (unsigned long long) (byte &  0xff) << (i*8);
     *bus = tmp;
@@ -45,11 +46,11 @@ void inline putBytesToBus(Type_D* bus, uint8_t byte, uint32_t i) {
   }
 }
 
-template <typename Type_D>
-void inline setBit(Type_D* a, uint8_t i, uint32_t bit) {
-  if (sizeof(Type_D) <= 8)
+template <typename T_VtbBus>
+void inline setBit(T_VtbBus* a, uint32_t i, uint32_t bit) {
+  if (sizeof(T_VtbBus) <= 8)
   {
-    Type_D tmp = (*a) & (~(1 << i));
+    T_VtbBus tmp = (*a) & (~(1 << i));
     tmp |= ((bit) & 0x1) << i;    
     *a = tmp;
   } else {
@@ -57,26 +58,43 @@ void inline setBit(Type_D* a, uint8_t i, uint32_t bit) {
   } 
 }
 
+bool inline getBit(const uint64_t a, uint32_t i) {
+  return ((a & (1ull << i)) != 0);  
+}
 
-template <typename Type_A, typename Type_D> struct AxiLiteM2S {
+bool inline getBit(const uint32_t* a, uint32_t i) {
+  return 0;
+}
+
+
+uint8_t inline getByte(const uint64_t a, uint32_t i) {
+  return (a >> (i*8)) & 0xff;  
+}
+
+uint8_t inline getByte(const uint32_t* a, uint32_t i) {
+  return 0;
+}
+
+
+template <typename T_VtbAddress, typename T_VtbBus> struct AxiLiteM2S : public VtbObject {
 
   bool awvalid;
-  Type_A awaddr;
+  T_VtbAddress awaddr;
   bool wvalid;
-  Type_D wdata;
+  T_VtbBus wdata;
   uint32_t wstrb;  
   bool bready;
 
   bool arvalid;
-  Type_A araddr;
+  T_VtbAddress araddr;
   bool rready;
 
   //AxiLiteM2S():awvalid(0), awaddr(0), wvalid(0), wdata(0), wstrb(0), bready(0), arvalid(0), araddr(0), rready(0) {};
-  AxiLiteM2S() {memset(this, 0, sizeof(AxiLiteM2S<Type_A, Type_D>));}
+  AxiLiteM2S() {memset(this, 0, sizeof(AxiLiteM2S<T_VtbAddress, T_VtbBus>));}
 
 };
 
-template <typename Type_A, typename Type_D> struct AxiLiteS2M {
+template <typename T_VtbAddress, typename T_VtbBus> struct AxiLiteS2M : public VtbObject {
 
   bool awready;
   
@@ -88,18 +106,18 @@ template <typename Type_A, typename Type_D> struct AxiLiteS2M {
 
   bool arready;  
   bool rvalid;
-  Type_D rdata;
+  T_VtbBus rdata;
 
-  AxiLiteS2M() {memset(this, 0, sizeof(AxiLiteM2S<Type_A, Type_D>));}
+  AxiLiteS2M() {memset(this, 0, sizeof(AxiLiteM2S<T_VtbAddress, T_VtbBus>));}
 };
 
 
-template <typename Type_A, typename Type_D> struct AxiBusM2S {
+template <typename T_VtbAddress, typename T_VtbBus> struct AxiBusM2S : public VtbObject {
   
   bool awvalid;
-  Type_A awaddr;
+  T_VtbAddress awaddr;
   bool wvalid;
-  Type_D wdata;
+  T_VtbBus wdata;
   bool wlast;
   uint64_t wstrb;  
   uint32_t awid;
@@ -118,7 +136,7 @@ template <typename Type_A, typename Type_D> struct AxiBusM2S {
   bool bready;
 
   bool arvalid;
-  Type_A araddr;
+  T_VtbAddress araddr;
   uint32_t arid;
   uint32_t arlen;
   uint32_t arsize;
@@ -131,11 +149,11 @@ template <typename Type_A, typename Type_D> struct AxiBusM2S {
   uint32_t aruser;
   bool rready;
 
-  AxiBusM2S() {memset(this, 0, sizeof(AxiBusM2S<Type_A, Type_D>));}
+  AxiBusM2S() {memset(this, 0, sizeof(AxiBusM2S<T_VtbAddress, T_VtbBus>));}
 };
 
 
-template <typename Type_A, typename Type_D> struct AxiBusS2M {
+template <typename T_VtbAddress, typename T_VtbBus> struct AxiBusS2M : public VtbObject {
 
   bool awready;
   
@@ -152,26 +170,30 @@ template <typename Type_A, typename Type_D> struct AxiBusS2M {
   bool rlast;
   uint32_t rid;
   uint32_t ruser;
-  Type_D rdata;
+  T_VtbBus rdata;
 
-  AxiBusS2M() {memset(this, 0, sizeof(AxiBusS2M<Type_A, Type_D>));}
+  AxiBusS2M() {memset(this, 0, sizeof(AxiBusS2M<T_VtbAddress, T_VtbBus>));}
 };
 
-template <typename Type_D> struct AxiStreamSource {
+template <typename T_VtbBus> struct AxiStreamSource : public VtbObject {
 
   bool tvalid;  
-  Type_D tdata;
+  T_VtbBus tdata;
   uint64_t tkeep;
   uint64_t tstrb;
   uint32_t tlast;
   uint32_t tuser;
   uint32_t tid;
   uint32_t tdest;
-
-  AxiStreamSource() {memset(this, 0, sizeof(AxiStreamSource<Type_D>));}
+  bool ignore_keep;
+  bool ignore_strb;
+  AxiStreamSource() {memset(this, 0, sizeof(AxiStreamSource<T_VtbBus>)); this->ignore_keep = true; this->ignore_strb = true;}
+  bool isValidByte(uint32_t i ) const {return (this->ignore_strb || getBit(this->tstrb, 1)) && (this->ignore_keep || getBit(this->tkeep, 1));}
+  uint8_t getByte (uint32_t i) const {return vtb::getByte(this->tdata, i);}
+  bool setByte (uint8_t data, uint32_t i) const {return vtb::setByte(&this->tdata, data, i);}
 };
 
-struct AxiStreamSink {
+struct AxiStreamSink : public VtbObject {
   bool tready;
   AxiStreamSink() {this->tready = 0;}
 };

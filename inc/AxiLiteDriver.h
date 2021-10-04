@@ -13,10 +13,10 @@
 namespace vtb {
 
 
-template <typename Type_A, typename Type_D>
-class AxiLiteDriver : public Driver< AxiLiteTransaction<Type_A, Type_D> > {
+template <typename T_VtbAddress, typename T_VtbBus>
+class AxiLiteDriver : public Driver< AxiLiteTransaction<T_VtbAddress, T_VtbBus> > {
 
-  using Transaction = AxiLiteTransaction<Type_A, Type_D>;
+  using Transaction = AxiLiteTransaction<T_VtbAddress, T_VtbBus>;
   using Driver<Transaction> :: transQueue;
 
   enum T_State {
@@ -80,12 +80,12 @@ public:
   ~AxiLiteDriver() {};
 
   void pushTransaction(Transaction & t) { transQueue.push_back(t);}
-  void eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<Type_A, Type_D> & m2s, const AxiLiteS2M<Type_A, Type_D>& s2m);
+  void eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<T_VtbAddress, T_VtbBus> & m2s, const AxiLiteS2M<T_VtbAddress, T_VtbBus>& s2m);
   int getTransactionCount() {return transQueue.size();};
 
 private:
 
-  AxiLiteM2S<Type_A, Type_D> next_output;
+  AxiLiteM2S<T_VtbAddress, T_VtbBus> next_output;
   bool last_clk = 0;
   T_State state = ST_IDLE;
   int trans_cnt = 0;
@@ -96,8 +96,8 @@ private:
 
 
 
-template <typename Type_A, typename Type_D>
-void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<Type_A, Type_D> & m2s, const AxiLiteS2M<Type_A, Type_D>& s2m) {    
+template <typename T_VtbAddress, typename T_VtbBus>
+void AxiLiteDriver<T_VtbAddress, T_VtbBus>::eval(uint64_t time, bool clk, bool rst, AxiLiteM2S<T_VtbAddress, T_VtbBus> & m2s, const AxiLiteS2M<T_VtbAddress, T_VtbBus>& s2m) {    
   if (clk & ! last_clk) {
     if (rst) 
       state = T_State::ST_IDLE;
@@ -191,7 +191,7 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
                           case Transaction::READ            :  state = ST_IDLE;
                                                                transQueue.pop_front();
                                                                break;
-                          case Transaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\r\n", this->name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
+                          case Transaction::READ_CHECK      :  printf("%s : Checking data %s (Expect: 0x%016lx Actual: 0x%016lx)\n", this->name, ((read_data & next_transaction.mask) == (next_transaction.data & next_transaction.mask))?"OK":"FAILED", next_transaction.data & next_transaction.mask, read_data & next_transaction.mask);
                                                                state = ST_IDLE;
                                                                transQueue.pop_front();
                                                                break;
@@ -214,8 +214,8 @@ void AxiLiteDriver<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, AxiL
       if (m2s.bready && s2m.bvalid) {
         switch(s2m.bresp) 
         {
-          case 0 : printf("%s : Write transaction OK\r\n", this->name); break;
-          default: printf("%s : Write transaction failed\r\n", this->name); break;
+          case 0 : printf("%s : Write transaction OK\n", this->name); break;
+          default: printf("%s : Write transaction failed\n", this->name); break;
         }
       }
 
