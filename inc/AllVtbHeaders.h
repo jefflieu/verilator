@@ -8,9 +8,9 @@
 #include "AxiMemory.h"
 #include "VtbAxiBus.h"
 
-//#ifdef HLS_SUPPORT
+#ifdef VITIS_HLS
 #include "HlsAxiStreamDriver.h"
 #include "HlsAxiStreamReceiver.h"
-//#endif
+#endif
 
 

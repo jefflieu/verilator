@@ -14,18 +14,18 @@
 
 namespace vtb {
 
-template <typename Type_A>
+template <typename T_VtbAddress>
 struct MemorySegment {
 
   uint32_t size;
-  Type_A   base;
-  MemorySegment(Type_A base, uint32_t size) : base(base), size(size) {}
+  T_VtbAddress   base;
+  MemorySegment(T_VtbAddress base, uint32_t size) : base(base), size(size) {}
   ~MemorySegment(){}
 };
 
 
 
-template <typename Type_A, typename Type_D>
+template <typename T_VtbAddress, typename T_VtbBus>
 class AxiMemory : public VtbObject {
   
   enum T_State {
@@ -81,12 +81,12 @@ public:
 
   */
 
-  AxiMemory(const uint32_t size_bytes, const Type_A base_addr = 0, const char* c = nullptr) : base_addr(base_addr), mem_size(size_bytes) {
+  AxiMemory(const uint32_t size_bytes, const T_VtbAddress base_addr = 0, const char* c = nullptr) : base_addr(base_addr), mem_size(size_bytes) {
     
     this->name = (c == nullptr)?"AxiMemory":c;
     mem_array = new uint8_t[mem_size];
     //base address must align to bus_size
-    bus_size = sizeof(Type_D);
+    bus_size = sizeof(T_VtbBus);
     ASSERT((base_addr % bus_size) == 0, "Base address must align to bus size");
 
   };
@@ -94,7 +94,7 @@ public:
   ~AxiMemory() {delete mem_array; mem_array = nullptr;};
 
   
-  void eval(uint64_t time, bool clk, bool rst, const AxiBusM2S<Type_A, Type_D> & m2s, AxiBusS2M<Type_A, Type_D>& s2m);
+  void eval(uint64_t time, bool clk, bool rst, const AxiBusM2S<T_VtbAddress, T_VtbBus> & m2s, AxiBusS2M<T_VtbAddress, T_VtbBus>& s2m);
   
   void randomizeData() {  
                           for(int i = 0; i < mem_size; i++) {
@@ -109,18 +109,18 @@ private:
   uint8_t* mem_array;
   uint32_t mem_size;
   
-  AxiBusS2M<Type_A, Type_D> next_output;  
+  AxiBusS2M<T_VtbAddress, T_VtbBus> next_output;  
   bool last_clk = 0;
 
   T_State rd_state = ST_IDLE;
   T_State wr_state = ST_IDLE;  
-  Type_A base_addr = 0;
-  Type_A waddr;
+  T_VtbAddress base_addr = 0;
+  T_VtbAddress waddr;
   uint32_t wlen;
   uint32_t wsize;
   uint32_t wburst;
   uint32_t bus_size;
-  Type_A raddr;
+  T_VtbAddress raddr;
   uint32_t rlen;
   uint32_t rsize;
   uint32_t rburst;
@@ -130,8 +130,8 @@ private:
 
 
 
-template <typename Type_A, typename Type_D>
-void AxiMemory<Type_A, Type_D>::eval(uint64_t time, bool clk, bool rst, const AxiBusM2S<Type_A, Type_D> & m2s, AxiBusS2M<Type_A, Type_D>& s2m) {    
+template <typename T_VtbAddress, typename T_VtbBus>
+void AxiMemory<T_VtbAddress, T_VtbBus>::eval(uint64_t time, bool clk, bool rst, const AxiBusM2S<T_VtbAddress, T_VtbBus> & m2s, AxiBusS2M<T_VtbAddress, T_VtbBus>& s2m) {    
   this->time = time;
 
   if (clk & ! last_clk) {
